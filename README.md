@@ -1,3 +1,3 @@
 # Compute Capabilities of each PyTorch Package
 
-See [table.md].
+See [table.md](table.md).
