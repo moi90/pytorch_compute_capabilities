@@ -132,8 +132,6 @@ def get_summary(pkg_archive_fn) -> Mapping[str, str]:
 
 
 def main():
-    print("Reading repodata.json...")
-
     download_file("repodata.json")
 
     with open("repodata.json") as f:
@@ -162,6 +160,8 @@ def main():
     table = table.sort_values("package")
     with open("table.md", "w") as f:
         table.to_markdown(f, tablefmt="github", index=False)
+
+    print("Done.")
 
 
 if __name__ == "__main__":
