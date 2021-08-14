@@ -2,7 +2,7 @@
 
 Checks the compute capabalities of each pytorch package in the [PyTorch conda channel](https://anaconda.org/pytorch) by running `cuobjdump` from the [CUDA Toolkit](https://docs.nvidia.com/cuda/) on the included `*.so` files.
 
-For results see [table.md].
+For results see [table.md](table.md).
 
 ## License
 Copyright 2021 Martin Schröder
