@@ -43,6 +43,8 @@
 | pytorch-1.8.0-py3.7_cuda10.1_cudnn7.6.3_0         | sm_35, sm_37, sm_50, sm_60, sm_61, sm_70, sm_75               |
 | pytorch-1.8.0-py3.7_cuda10.2_cudnn7.6.5_0         | sm_35, sm_37, sm_50, sm_60, sm_61, sm_70, sm_75               |
 | pytorch-1.8.0-py3.7_cuda11.1_cudnn8.0.5_0         | sm_35, sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86 |
-| pytorch-1.8.1-py3.7_cuda10.1_cudnn7.6.3_0         | sm_35, sm_37, sm_50, sm_60, sm_61, sm_70, sm_75               |
-| pytorch-1.8.1-py3.7_cuda10.2_cudnn7.6.5_0         | sm_35, sm_37, sm_50, sm_60, sm_61, sm_70, sm_75               |
-| pytorch-1.8.1-py3.7_cuda11.1_cudnn8.0.5_0         | sm_35, sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86 |
+| pytorch-1.8.1-py3.7_cuda10.1_cudnn7.6.3_0         | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75                      |
+| pytorch-1.8.1-py3.7_cuda10.2_cudnn7.6.5_0         | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75                      |
+| pytorch-1.8.1-py3.7_cuda11.1_cudnn8.0.5_0         | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86        |
+| pytorch-1.9.0-py3.7_cuda10.2_cudnn7.6.5_0         | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75                      |
+| pytorch-1.9.0-py3.7_cuda11.1_cudnn8.0.5_0         | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86        |
