@@ -1,7 +1,7 @@
 import fnmatch
 import glob
 import json
-import multiprocessing
+import multiprocessing.pool
 import os
 import shutil
 import subprocess
@@ -24,8 +24,8 @@ def strip_extension(fn: str, extensions=[".tar.bz2", ".tar.gz"]):
     raise ValueError(f"Unexpected extension for filename: {fn}")
 
 
-def download_file(pkg_archive_fn):
-    if os.path.isfile(pkg_archive_fn):
+def download_file(pkg_archive_fn, force=False):
+    if not force and os.path.isfile(pkg_archive_fn):
         return
 
     file_url = urllib.parse.urljoin(BASE_URL, pkg_archive_fn)
@@ -54,23 +54,23 @@ def get_lib_fns(pkg_archive_fn) -> List[str]:
     download_file(pkg_archive_fn)
 
     try:
-        print(f"Reading archive {pkg_archive_fn}...")
+        tqdm.tqdm.write(f"Reading archive {pkg_archive_fn}...")
         with tarfile.open(pkg_archive_fn, "r:*") as tf:
             match = False
             for m in tf:
                 libname = os.path.basename(m.name)
                 if fnmatch.fnmatch(libname, "*.so"):
-                    print(f"Extracting {libname}...")
+                    tqdm.tqdm.write(f"Extracting {pkg_archive_fn}/{libname}...")
                     with open(os.path.join(pkg_name, libname), "wb") as df:
                         shutil.copyfileobj(tf.extractfile(m), df)
                         match = True
 
             if not match:
-                print("*.so not found")
+                tqdm.tqdm.write(f"{pkg_archive_fn}/*.so not found")
                 with open(os.path.join(pkg_name, "filelist.txt"), "w") as f:
                     f.write("\n".join(tf.getnames()))
     except (tarfile.TarError, EOFError) as exc:
-        print(exc)
+        tqdm.tqdm.write(str(exc))
         os.remove(pkg_archive_fn)
         return []
     else:
@@ -94,7 +94,7 @@ def get_summary(pkg_archive_fn) -> Mapping[str, str]:
     lib_fns = get_lib_fns(pkg_archive_fn)
 
     for lib_fn in lib_fns:
-        print(f"Reading lib {lib_fn}...")
+        tqdm.tqdm.write(f"Reading lib {lib_fn}...")
         try:
             output = subprocess.check_output(
                 f'cuobjdump "{lib_fn}"', shell=True
@@ -132,7 +132,7 @@ def get_summary(pkg_archive_fn) -> Mapping[str, str]:
 
 
 def main():
-    download_file("repodata.json")
+    download_file("repodata.json", force=True)
 
     with open("repodata.json") as f:
         repodata = json.load(f)
@@ -150,10 +150,10 @@ def main():
 
         pkg_archive_fns.append(pkg_archive_fn)
 
-    print("Processing", ", ".join(pkg_archive_fns), "...")
+    print("Processing packages...")
     print()
 
-    with multiprocessing.Pool(4) as p:
+    with multiprocessing.pool.ThreadPool(4) as p:
         table = list(p.imap_unordered(get_summary, pkg_archive_fns))
 
     table = pd.DataFrame(table)
