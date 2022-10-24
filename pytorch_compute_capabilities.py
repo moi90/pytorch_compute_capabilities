@@ -9,6 +9,7 @@ import tarfile
 import urllib.parse
 import urllib.request
 from typing import List, Mapping
+from natsort import natsort_keygen
 
 import pandas as pd
 import parse
@@ -157,7 +158,7 @@ def main():
         table = list(p.imap_unordered(get_summary, pkg_archive_fns))
 
     table = pd.DataFrame(table)
-    table = table.sort_values("package")
+    table = table.sort_values("package", key=natsort_keygen(), ascending=False)
     with open("table.md", "w") as f:
         table.to_markdown(f, tablefmt="github", index=False)
 

@@ -2,3 +2,4 @@
 repodata.json
 */filelist.txt
 .venv/
+*.tar.bz2
