@@ -8,8 +8,9 @@ import subprocess
 import tarfile
 import urllib.parse
 import urllib.request
-from typing import List, Mapping
+from typing import List, Mapping, Optional
 from natsort import natsort_keygen
+import packaging.version
 
 import pandas as pd
 import parse
@@ -25,71 +26,93 @@ def strip_extension(fn: str, extensions=[".tar.bz2", ".tar.gz"]):
     raise ValueError(f"Unexpected extension for filename: {fn}")
 
 
-def download_file(pkg_archive_fn, force=False):
-    if not force and os.path.isfile(pkg_archive_fn):
-        return
+def download_file(src, dst, force=False):
+    if not force and os.path.isfile(dst):
+        return dst
 
-    file_url = urllib.parse.urljoin(BASE_URL, pkg_archive_fn)
-    bar = tqdm.tqdm(desc=f"Downloading {pkg_archive_fn}...")
+    src_url = urllib.parse.urljoin(BASE_URL, src)
+    bar = tqdm.tqdm(
+        desc=f"Downloading {src}...",
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+    )
 
     def _update_bar(blocks_transferred, block_size, total_size):
-        bar.total = total_size // 1024
-        bar.update(block_size // 1024)
+        bar.total = total_size
+        bar.update(block_size)
 
-    urllib.request.urlretrieve(file_url, pkg_archive_fn, _update_bar)
+    urllib.request.urlretrieve(src_url, dst, _update_bar)
 
     bar.close()
 
+    return dst
 
-def get_lib_fns(pkg_archive_fn) -> List[str]:
-    pkg_name = strip_extension(pkg_archive_fn)
 
-    os.makedirs(pkg_name, exist_ok=True)
+def get_lib_fns(raw_pkg_archive_fn) -> List[str]:
+    pkg_name = strip_extension(raw_pkg_archive_fn)
 
-    lib_fns = glob.glob(os.path.join(pkg_name, "*.so"))
+    pkg_cache_dir = os.path.join("cache", pkg_name)
+    os.makedirs(pkg_cache_dir, exist_ok=True)
+
+    lib_fns = glob.glob(os.path.join(pkg_cache_dir, "*.so"))
 
     if lib_fns:
         return lib_fns
 
     # Else download and extract
-    download_file(pkg_archive_fn)
+    cache_pkg_archive_fn = os.path.join("cache", raw_pkg_archive_fn)
 
     try:
-        tqdm.tqdm.write(f"Reading archive {pkg_archive_fn}...")
-        with tarfile.open(pkg_archive_fn, "r:*") as tf:
+        download_file(raw_pkg_archive_fn, cache_pkg_archive_fn)
+    except Exception as exc:
+        tqdm.tqdm.write(str(exc))
+        os.remove(cache_pkg_archive_fn)
+        raise
+
+    try:
+        tqdm.tqdm.write(f"Reading archive {cache_pkg_archive_fn}...")
+        with tarfile.open(cache_pkg_archive_fn, "r:*") as tf:
             match = False
             for m in tf:
                 libname = os.path.basename(m.name)
                 if fnmatch.fnmatch(libname, "*.so"):
-                    tqdm.tqdm.write(f"Extracting {pkg_archive_fn}/{libname}...")
-                    with open(os.path.join(pkg_name, libname), "wb") as df:
+                    tqdm.tqdm.write(f"Extracting {cache_pkg_archive_fn}/{libname}...")
+                    with open(os.path.join(pkg_cache_dir, libname), "wb") as df:
                         shutil.copyfileobj(tf.extractfile(m), df)
                         match = True
 
             if not match:
-                tqdm.tqdm.write(f"{pkg_archive_fn}/*.so not found")
-                with open(os.path.join(pkg_name, "filelist.txt"), "w") as f:
+                tqdm.tqdm.write(f"{cache_pkg_archive_fn}/*.so not found")
+                with open(os.path.join(pkg_cache_dir, "filelist.txt"), "w") as f:
                     f.write("\n".join(tf.getnames()))
     except (tarfile.TarError, EOFError) as exc:
         tqdm.tqdm.write(str(exc))
-        os.remove(pkg_archive_fn)
+        os.remove(cache_pkg_archive_fn)
         return []
     else:
-        return glob.glob(os.path.join(pkg_name, "*.so"))
+        return glob.glob(os.path.join(pkg_cache_dir, "*.so"))
 
 
-def get_summary(pkg_archive_fn) -> Mapping[str, str]:
-
+def get_cached_summary(pkg_archive_fn: str) -> Optional[Mapping[str, str]]:
     pkg_name = strip_extension(pkg_archive_fn)
 
-    summary_fn = os.path.join(pkg_name, "summary.json")
+    cache_dir = os.path.join("cache", pkg_name)
+    summary_fn = os.path.join(cache_dir, "summary.json")
 
     try:
         with open(summary_fn) as f:
             return json.load(f)
     except FileNotFoundError:
-        pass
+        return None
 
+
+def get_summary(pkg_archive_fn) -> Mapping[str, str]:
+    summary = get_cached_summary(pkg_archive_fn)
+    if summary is not None:
+        return summary
+
+    pkg_name = strip_extension(pkg_archive_fn)
     architectures = set()
 
     lib_fns = get_lib_fns(pkg_archive_fn)
@@ -110,7 +133,8 @@ def get_summary(pkg_archive_fn) -> Mapping[str, str]:
         except subprocess.CalledProcessError:
             os.remove(lib_fn)
 
-    pkg_name = strip_extension(pkg_archive_fn)
+    cache_dir = os.path.join("cache", pkg_name)
+    summary_fn = os.path.join(cache_dir, "summary.json")
     summary = {"package": pkg_name, "architectures": ", ".join(sorted(architectures))}
 
     # Cleanup package archive
@@ -119,7 +143,7 @@ def get_summary(pkg_archive_fn) -> Mapping[str, str]:
             json.dump(summary, f)
 
         try:
-            os.remove(pkg_archive_fn)
+            os.remove(os.path.join("cache", pkg_archive_fn))
         except FileNotFoundError:
             pass
 
@@ -132,10 +156,23 @@ def get_summary(pkg_archive_fn) -> Mapping[str, str]:
     return summary
 
 
-def main():
-    download_file("repodata.json", force=True)
+def parse_version(text):
+    return packaging.version.parse(text)
 
-    with open("repodata.json") as f:
+
+parse_version.pattern = r"\d+(\.\d+)*"
+
+PYTHON_MIN_VER = packaging.version.parse("3.7")
+PYTHON_MAX_VER = packaging.version.parse("4")
+
+
+def main():
+    print("Loading ")
+    cached_repodata_fn = download_file(
+        "repodata.json", os.path.join("cache", "repodata.json"), force=True
+    )
+
+    with open(cached_repodata_fn) as f:
         repodata = json.load(f)
 
     pkg_archive_fns = []
@@ -143,10 +180,23 @@ def main():
         if p["name"] != "pytorch":
             continue
 
+        python_ver = parse.search(
+            "py{python_ver:ver}", p["build"], extra_types=dict(ver=parse_version)
+        )
+        if python_ver is None:
+            continue
+
+        if (PYTHON_MAX_VER < python_ver["python_ver"]) or (
+            python_ver["python_ver"] < PYTHON_MIN_VER
+        ):
+            continue
+
+        print(pkg_archive_fn, python_ver["python_ver"])
+
         if "cuda" not in p["build"]:
             continue
 
-        if "py3.7" not in p["build"]:
+        if "py" not in p["build"]:
             continue
 
         pkg_archive_fns.append(pkg_archive_fn)
@@ -154,13 +204,32 @@ def main():
     print("Processing packages...")
     print()
 
+    # Load cached summaries
+    table = []
+    remaining_pkg_archive_fns = []
+    for pkg_archive_fn in pkg_archive_fns:
+        summary = get_cached_summary(pkg_archive_fn)
+        if summary is not None:
+            table.append(summary)
+        else:
+            remaining_pkg_archive_fns.append(pkg_archive_fn)
+
     with multiprocessing.pool.ThreadPool(4) as p:
-        table = list(p.imap_unordered(get_summary, pkg_archive_fns))
+        table.extend(
+            tqdm.tqdm(
+                p.imap_unordered(get_summary, remaining_pkg_archive_fns),
+                desc="Processing packages...",
+                total=len(remaining_pkg_archive_fns),
+            )
+        )
 
     table = pd.DataFrame(table)
     table = table.sort_values("package", key=natsort_keygen(), ascending=False)
+
     with open("table.md", "w") as f:
         table.to_markdown(f, tablefmt="github", index=False)
+
+    table.to_csv("table.csv", index=False)
 
     print("Done.")
 

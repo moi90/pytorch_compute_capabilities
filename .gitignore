@@ -1,5 +1,7 @@
-*/summary.json
+cache/*/*
+!cache/*/summary.json
 repodata.json
 */filelist.txt
 .venv/
 *.tar.bz2
+table.csv
