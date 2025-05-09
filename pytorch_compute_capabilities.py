@@ -1,3 +1,13 @@
+# /// script
+# dependencies = [
+#   "natsort",
+#   "packaging",
+#   "parse",
+#   "tqdm",
+#   "pandas",
+#   "tabulate",
+# ]
+# ///
 import fnmatch
 import glob
 import json
@@ -160,13 +170,26 @@ def parse_version(text):
     return packaging.version.parse(text)
 
 
-parse_version.pattern = r"\d+(\.\d+)*"
+parse_version.pattern = r"\d+(\.\d+)*"  # type: ignore
 
-PYTHON_MIN_VER = packaging.version.parse("3.7")
+# See https://devguide.python.org/versions/ for supported Python versions
+PYTHON_MIN_VER = packaging.version.parse("3.9")
 PYTHON_MAX_VER = packaging.version.parse("4")
 
 
 def main():
+    # First of all, check that cuobjdump is available
+    try:
+        subprocess.check_output(
+            "cuobjdump --version", shell=True, stderr=subprocess.STDOUT
+        ).decode("utf-8")
+    except subprocess.CalledProcessError as exc:
+        print(exc.cmd)
+        print(exc.output.decode("utf-8"))
+        print(exc)
+        print("cuobjdump not found. Please install the CUDA toolkit.")
+        return
+
     print("Loading ")
     cached_repodata_fn = download_file(
         "repodata.json", os.path.join("cache", "repodata.json"), force=True
