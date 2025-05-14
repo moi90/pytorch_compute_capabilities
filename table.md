@@ -1,5 +1,11 @@
 | package                                       | architectures                                                  |
 |-----------------------------------------------|----------------------------------------------------------------|
+| pytorch-2.7.0-py3.11_cuda12.8_cudnn9.7.1_0    | sm_75, sm_80, sm_86, sm_90, sm_100, sm_120,                    |
+| pytorch-2.7.0-py3.11_cuda12.6_cudnn9.5.1_0    | sm_50, sm_60, sm_70, sm_75, sm_80, sm_86, sm_90                |
+| pytorch-2.7.0-py3.11_cuda11.8_cudnn9.1.0_0    | sm_50, sm_60, sm_70, sm_75, sm_80, sm_86, sm_37, sm_90         |
+| pytorch-2.6.0-py3.11_cuda12.6_cudnn9.5.1_0    | sm_50, sm_60, sm_70, sm_75, sm_80, sm_86, sm_90                |
+| pytorch-2.6.0-py3.11_cuda12.4_cudnn9.1.0_0    | sm_50, sm_60, sm_70, sm_75, sm_80, sm_86, sm_90                |
+| pytorch-2.6.0-py3.11_cuda11.8_cudnn9.1.0_0    | sm_50, sm_60, sm_70, sm_75, sm_80, sm_86, sm_37, sm_90         |
 | pytorch-2.5.1-py3.12_cuda12.4_cudnn9.1.0_0    | sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90, sm_90a |
 | pytorch-2.5.1-py3.12_cuda12.1_cudnn9.1.0_0    | sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90, sm_90a |
 | pytorch-2.5.1-py3.12_cuda11.8_cudnn9.1.0_0    | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90  |
@@ -59,8 +65,8 @@
 | pytorch-2.3.0-py3.12_cuda12.1_cudnn8.9.2_0    | sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90         |
 | pytorch-2.3.0-py3.12_cuda11.8_cudnn8.7.0_0    | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90  |
 | pytorch-2.3.0-py3.11_cuda12.1_cudnn8.9.2_0    | sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90         |
-| pytorch-2.3.0-py3.11_cuda11.8_cudnn8.7.0_0    |                                                                |
-| pytorch-2.3.0-py3.10_cuda12.1_cudnn8.9.2_0    |                                                                |
+| pytorch-2.3.0-py3.11_cuda11.8_cudnn8.7.0_0    | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90  |
+| pytorch-2.3.0-py3.10_cuda12.1_cudnn8.9.2_0    | sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90         |
 | pytorch-2.3.0-py3.10_cuda11.8_cudnn8.7.0_0    | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90  |
 | pytorch-2.3.0-py3.9_cuda12.1_cudnn8.9.2_0     | sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90         |
 | pytorch-2.3.0-py3.9_cuda11.8_cudnn8.7.0_0     | sm_37, sm_50, sm_60, sm_61, sm_70, sm_75, sm_80, sm_86, sm_90  |
